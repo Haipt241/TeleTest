@@ -1,0 +1,5 @@
+FLASK_ENV=development
+FLASK_APP=run.py
+CACHE_TYPE=FileSystemCache
+CACHE_DIR=./cache
+CACHE_DEFAULT_TIMEOUT=300

@@ -2,21 +2,19 @@
 
 ## Overview
 
-This project provides an API to find the cheapest operator for a given phone number using a Trie data structure for efficient prefix-based search. The data is cached to enhance performance, and it falls back to the database if the cache is not available.
+This project provides an API to find the cheapest operator for a given phone number using a Trie data structure for efficient prefix-based search. The data is cached to enhance performance, and it reads from a JSON file if the cache is not available.
 
 ## Features
 
 - Efficient prefix-based search using Trie.
 - Caching for improved performance.
 - RESTful API to find the cheapest operator for a phone number.
-- Database seeding with initial operator and rate data.
+- JSON file for initial operator and rate data.
 
 ## Requirements
 
 - Python 3.8+
 - Flask
-- Flask-SQLAlchemy
-- Flask-Migrate
 - Flask-Caching
 - pytest
 - pytest-mock
@@ -27,7 +25,7 @@ This project provides an API to find the cheapest operator for a given phone num
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/yourusername/yourrepository.git
+    git clone git@github.com:Haipt241/TeleTest.git
     cd yourrepository
     ```
 
@@ -52,58 +50,9 @@ This project provides an API to find the cheapest operator for a given phone num
     FLASK_ENV=development
     FLASK_APP=run.py
     SECRET_KEY=your_secret_key_here
-    SQLALCHEMY_DATABASE_URI=sqlite:///app.db
     CACHE_TYPE=FileSystemCache
     CACHE_DIR=./cache
     CACHE_DEFAULT_TIMEOUT=300
-    ```
-
-## Database Setup
-
-1. **Initialize the database:**
-
-    ```sh
-    flask db init
-    ```
-
-2. **Create database migrations:**
-
-    ```sh
-    flask db migrate -m "Initial migration."
-    ```
-
-3. **Apply the migrations:**
-
-    ```sh
-    flask db upgrade
-    ```
-
-4. **Seed the database:**
-
-    Ensure you have a seed file `json/operators.json` with your initial data. Example:
-
-    ```json
-    [
-        {
-            "name": "Operator A",
-            "rates": [
-                {"prefix": "123", "price": 0.1},
-                {"prefix": "456", "price": 0.2}
-            ]
-        },
-        {
-            "name": "Operator B",
-            "rates": [
-                {"prefix": "789", "price": 0.15}
-            ]
-        }
-    ]
-    ```
-
-    Then run the seed command:
-
-    ```sh
-    python manage_db.py seed operators
     ```
 
 ## Running the Application

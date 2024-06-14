@@ -1,21 +1,24 @@
 import pytest
-from app import create_app, db, cache
-from app.models import Operator, Rate
-from app.routes import main
+import json
+import os
+import uuid
+from run import create_app, cache
+from app.routes import main as main_blueprint
 
 
 @pytest.fixture
 def app():
     app = create_app()
+    unique_blueprint_name = f"main_{uuid.uuid4()}"
+    main = main_blueprint
+    main.name = unique_blueprint_name
     app.register_blueprint(main)
     app.config.update({
         "TESTING": True,
     })
     with app.app_context():
-        db.create_all()
-        print("Cache cleared!")
+        cache.clear()  # Clear cache before running tests
         yield app
-        db.drop_all()
 
 
 @pytest.fixture
@@ -40,16 +43,30 @@ def test_find_cheapest_cache_hit(client):
     assert response.get_json() == {'operator': 'Operator A', 'price': 0.1}
 
 
-def test_find_cheapest_cache_miss_and_found_in_trie(client):
-    phone_number = '1234567890'
+@pytest.fixture
+def mock_data():
+    return [
+        {
+            "name": "Operator A",
+            "rates": [
+                {"prefix": "123", "price": 0.1},
+                {"prefix": "456", "price": 0.2}
+            ]
+        }
+    ]
 
-    with client.application.app_context():
-        operator = Operator(name='Operator A')
-        db.session.add(operator)
-        db.session.commit()
-        rate = Rate(prefix='123', price_per_minute=0.1, operator_id=operator.id)
-        db.session.add(rate)
-        db.session.commit()
+
+def prepare_cache_and_mock_data(mocker, mock_data):
+    cache.clear()
+    mocker.patch.object(cache, 'get', return_value=None)
+    mocker.patch.object(cache, 'set')
+    mocker.patch('builtins.open', mocker.mock_open(read_data=json.dumps(mock_data)))
+    mocker.patch('os.path.exists', return_value=True)
+
+
+def test_find_cheapest_cache_miss_and_found_in_trie(client, mocker, mock_data):
+    phone_number = '1234567890'
+    prepare_cache_and_mock_data(mocker, mock_data)
 
     response = client.get(f'/find_cheapest?phone_number={phone_number}')
     assert response.status_code == 200
@@ -58,8 +75,9 @@ def test_find_cheapest_cache_miss_and_found_in_trie(client):
     assert data['price'] == 0.1
 
 
-def test_find_cheapest_cache_miss_and_not_found_in_trie(client):
+def test_find_cheapest_cache_miss_and_not_found_in_trie(client, mocker, mock_data):
     phone_number = '9999999999'
+    prepare_cache_and_mock_data(mocker, mock_data)
 
     response = client.get(f'/find_cheapest?phone_number={phone_number}')
     assert response.status_code == 404

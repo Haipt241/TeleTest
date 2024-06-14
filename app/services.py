@@ -1,4 +1,5 @@
-from app.models import Rate
+import json
+import os
 from extensions import cache
 
 
@@ -21,13 +22,19 @@ class Trie:
             for prefix, price, operator in cached_trie_data:
                 self.insert(prefix, price, operator)
         else:
-            # Load data from database into Trie
-            rates = Rate.query.all()
-            trie_data = []
-            for rate in rates:
-                self.insert(rate.prefix, rate.price_per_minute, rate.operator.name)
-                trie_data.append((rate.prefix, rate.price_per_minute, rate.operator.name))
-            cache.set('trie_data', trie_data)
+            # Load data from JSON file into Trie
+            json_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'operators.json')
+            with open(json_file, 'r') as f:
+                operators = json.load(f)
+                trie_data = []
+                for operator_data in operators:
+                    operator_name = operator_data['name']
+                    for rate in operator_data['rates']:
+                        prefix = rate['prefix']
+                        price = rate['price']
+                        self.insert(prefix, price, operator_name)
+                        trie_data.append((prefix, price, operator_name))
+                cache.set('trie_data', trie_data)
 
     def insert(self, prefix, price, operator):
         node = self.root
